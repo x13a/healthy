@@ -1,6 +1,6 @@
-# healthchecker
+# healthy
 
-Healthchecker for docker. From security point of view using curl is bad idea.
+Health-checker for docker. From security point of view using curl is bad idea.
 This tool is limited to request 127.0.0.1 only. By the way you can build it
 with any target you want. On start it will check against hostname const.
 
@@ -12,7 +12,7 @@ $ make install
 
 ## Usage
 ```text
-healthchecker [URL (default: http://127.0.0.1:8000/ping)]
+healthy [URL (default: http://127.0.0.1:8000/ping)]
   -H string
     	Header
   -V	Print version and exit
@@ -26,5 +26,5 @@ healthchecker [URL (default: http://127.0.0.1:8000/ping)]
 
 Dockerfile:
 ```text
-HEALTHCHECK CMD healthchecker http://127.0.0.1:8000/ping || exit 1
+HEALTHCHECK CMD healthy http://127.0.0.1:8000/ping || exit 1
 ```

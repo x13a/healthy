@@ -1,4 +1,4 @@
-NAME        := healthchecker
+NAME        := healthy
 
 prefix      ?= /usr/local
 exec_prefix ?= $(prefix)
