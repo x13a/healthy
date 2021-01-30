@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	Version = "0.1.0"
+	Version = "0.1.1"
 
 	ExitSuccess = 0
 	ExitFailure = 1
@@ -29,31 +30,34 @@ const (
 	DefaultURL = "http://" + Hostname + ":8000/ping"
 )
 
-type Headers [][]string
+type Header http.Header
 
-func (h *Headers) Set(s string) error {
-	n := 2
-	header := strings.SplitN(s, ":", n)
-	if len(header) != n {
+func (h Header) Set(s string) error {
+	header := strings.SplitN(s, ":", 2)
+	if len(header) != 2 {
 		return fmt.Errorf("Invalid header: %q", s)
 	}
 	for index, value := range header {
 		header[index] = strings.TrimSpace(value)
 	}
-	*h = append(*h, header)
+	textproto.MIMEHeader(h).Add(header[0], header[1])
 	return nil
 }
 
-func (h *Headers) String() string {
+func (h Header) String() string {
 	return ""
 }
 
 type Opts struct {
 	url     string
 	timeout time.Duration
-	headers Headers
+	header  Header
 	fail    bool
 	skip    bool
+}
+
+func newOpts() *Opts {
+	return &Opts{header: make(Header)}
 }
 
 func usage() {
@@ -93,10 +97,10 @@ func parseURL(opts *Opts) error {
 
 func getOpts() *Opts {
 	flag.Usage = usage
-	opts := &Opts{}
+	opts := newOpts()
 	isVersion := flag.Bool("V", false, "Print version and exit")
 	flag.DurationVar(&opts.timeout, FlagTimeout, 0, "Timeout")
-	flag.Var(&opts.headers, FlagHeader, "Header")
+	flag.Var(&opts.header, FlagHeader, "Header")
 	flag.BoolVar(&opts.fail, FlagFail, true, "Fail silently")
 	flag.BoolVar(&opts.skip, FlagSkip, true, "InsecureSkipVerify")
 	flag.Parse()
@@ -119,8 +123,10 @@ func request(opts *Opts) error {
 	if err != nil {
 		return err
 	}
-	for _, header := range opts.headers {
-		req.Header.Add(header[0], header[1])
+	for k, vs := range opts.header {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
 	}
 	resp, err := client.Do(req)
 	if err != nil {
